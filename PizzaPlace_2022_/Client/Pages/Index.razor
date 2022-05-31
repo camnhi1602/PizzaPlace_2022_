@@ -1,0 +1,91 @@
+﻿@page "/"
+@using PizzaPlace_2022_.Shared;
+@inject IMenuService MenuService
+@inject IOrderService orderService
+<PageTitle>Index</PageTitle>
+
+Welcome to your new app.
+
+
+
+<PizzaList Title="Our selection of pizzas"
+Items="@State.Menu.Pizzas"
+ButtonTitle="Order"
+ButtonClass="btn btn-success pl-4 pr-4"
+Selected="@AddToBasket"/>
+
+<ShoppingBasket Orders="@State.Basket.Orders"
+GetPizzaFromId="@State.Menu.GetPizza"
+Selected="@RemoveFromBasket"/>
+
+<h1 class ="">Your current order</h1>
+    @foreach (var (pizza, pos) in State.Basket.Orders.Select(
+        (id, pos) => (State.Menu.GetPizza(id), pos))){
+        <div class = "row mb-2">
+        <div class = "col">
+            @pizza.Name
+        </div>  
+        <div class = "col text-right">
+            @($"{pizza.Price:0.00}")
+        </div>
+        <div class = "col"> </div>
+        <div class ="col"> </div>
+        <div class ="col"> 
+            <button class ="btn btn-danger"
+            @onclick = "@(() => RemoveFromBasket(pos))">
+            Remove
+            </button>
+        </div>
+        </div>
+    }
+    <div class ="row"> 
+        <div class ="col"> </div>
+         <div class ="col"><hr/> </div>
+          <div class ="col"> </div>
+           <div class ="col"> </div>
+    </div>
+    <div class = "row">
+     <div class ="col"> Total: </div>
+      <div class ="col text-rigth font-weight-bold">
+          @($"{State.TotalPrice:0.00}")</div>
+          <div class ="col"> </div>
+          <div class ="col"> </div>
+          <div class ="col"> </div>
+    </div>
+
+<CustomerEntry Title="Where to enter your details below"
+@bind-Customer="@State.Basket.Customer"
+ButtonTitle="Checkout"
+ButtonClass="mx-auto w-25 btn btn-success"
+ValiSubmit="PlaceOrder"/>
+
+@State.ToJson()
+
+@code{
+  private State State { get; }= new State();
+    protected override async Task OnInitializedAsync()
+    {
+        Menu menu = await MenuService.GetMenu();
+        foreach(Pizza pizza in menu.Pizzas)
+        {
+            State.Menu.Add(pizza);
+        }
+    }
+
+    private string SpicinessImage(Spiciness spiciness)
+    => $"image/{spiciness.ToString().ToLower()}.png";
+
+    private void AddToBasket(Pizza pizza)
+    => State.Basket.Add(pizza.Id);
+
+    private void RemoveFromBasket(int pos)
+    => State.Basket.RemoveAt(pos);
+
+    private async Task PlaceOrder()
+    {
+        //Console.WriteLine("Placing order");
+        await orderService.PlaceOrder(State.Basket);
+    }
+    
+}
+
